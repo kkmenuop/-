@@ -1,23 +1,3 @@
--[[
-    Open Aimbot
-    Universal Open Source Aimbot
-    Release 1.8.11
-
-    twix.cyou/pix
-    twix.cyou/OpenAimbotV3rm
-
-    Author: ttwiz_z (ttwizz)
-    License: MIT
-    GitHub: https://github.com/ttwizz/Open-Aimbot
-
-    Issues: https://github.com/ttwizz/Open-Aimbot/issues
-    Pull requests: https://github.com/ttwizz/Open-Aimbot/pulls
-    Discussions: https://github.com/ttwizz/Open-Aimbot/discussions
-
-    Wiki: https://moderka.org/Open-Aimbot
-]]
-
-
 --! Debugger
 
 local DEBUG = false
