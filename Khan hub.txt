@@ -1,0 +1,167 @@
+-- Script de Auto-Farming com Interface GUI - Blox Fruits
+-- Aviso: Use este script de forma responsável e respeite as regras do jogo.
+
+-- Função para exibir mensagens de depuração de forma segura
+local function debug(message)
+    print("[DEBUG] " .. message)
+end
+
+-- Configurações principais
+local config = {
+    farmRadius = 50,         -- Raio para detectar e atacar inimigos
+    lowHealthThreshold = 30, -- Percentual de vida para recuar
+    healDelay = 5,           -- Tempo (em segundos) para verificar a saúde novamente
+    attackInterval = 0.3,    -- Intervalo entre ataques
+    retreatPoint = Vector3.new(0, 100, 0), -- Posição segura para recuar
+    heightOffset = 10        -- Altura acima do inimigo
+}
+
+-- Variável global para controle do Auto-Farming
+isFarming = false
+
+-- Função utilitária para encontrar o inimigo mais próximo dentro do raio
+local function getNearestEnemy()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    local enemies = game.Workspace.Enemies:GetChildren()
+    local nearestEnemy, shortestDistance = nil, config.farmRadius
+
+    for _, enemy in pairs(enemies) do
+        if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
+            local distance = (rootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                nearestEnemy = enemy
+                shortestDistance = distance
+            end
+        end
+    end
+
+    return nearestEnemy
+end
+
+-- Função para monitorar a saúde e recuar se necessário
+local function monitorHealth()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChild("Humanoid")
+
+    if humanoid and humanoid.Health / humanoid.MaxHealth * 100 < config.lowHealthThreshold then
+        debug("Vida baixa, recuando...")
+        character.HumanoidRootPart.CFrame = CFrame.new(config.retreatPoint)
+        wait(config.healDelay)
+    end
+end
+
+-- Função para atacar o inimigo enquanto voa acima dele
+local function attackEnemy(enemy)
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+    if enemy and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
+        debug("Atacando inimigo: " .. enemy.Name)
+
+        while enemy.Parent and enemy.Humanoid.Health > 0 and isFarming do
+            -- Move o jogador para voar acima do inimigo
+            local enemyPosition = enemy.HumanoidRootPart.Position
+            rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
+
+            -- Simula um ataque automático
+            game:GetService("VirtualUser"):CaptureController()
+            game:GetService("VirtualUser"):Button1Down()
+
+            -- Verifica se o inimigo ainda existe
+            if not enemy.Parent or enemy.Humanoid.Health <= 0 then
+                break
+            end
+
+            wait(config.attackInterval)
+        end
+
+        debug("Inimigo derrotado ou fora de alcance.")
+    else
+        debug("Inimigo inválido ou já derrotado.")
+    end
+end
+
+-- Função principal do Auto-Farming
+local function autoFarm()
+    debug("Iniciando o Auto-Farming...")
+    while isFarming do
+        pcall(function()
+            monitorHealth() -- Verifica a saúde do personagem
+            local enemy = getNearestEnemy() -- Encontra o inimigo mais próximo
+            if enemy then
+                attackEnemy(enemy) -- Ataca o inimigo
+            else
+                debug("Nenhum inimigo próximo encontrado.")
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Criação da interface gráfica (GUI)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Name = "KhanHub"
+
+-- Criação do Frame principal
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+mainFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Adicionando título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0.3, 0)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Text = "KhanHub - By Leozin"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+title.BorderSizePixel = 0
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Parent = mainFrame
+
+-- Botão de Auto-Farm
+local autoFarmButton = Instance.new("TextButton")
+autoFarmButton.Size = UDim2.new(0.8, 0, 0.4, 0)
+autoFarmButton.Position = UDim2.new(0.1, 0, 0.35, 0)
+autoFarmButton.Text = "Ativar Auto-Farm"
+autoFarmButton.TextColor3 = Color3.new(1, 1, 1)
+autoFarmButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+autoFarmButton.BorderSizePixel = 0
+autoFarmButton.Font = Enum.Font.SourceSansBold
+autoFarmButton.TextSize = 18
+autoFarmButton.Parent = mainFrame
+
+-- Status abaixo do botão
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0.2, 0)
+statusLabel.Position = UDim2.new(0, 0, 0.8, 0)
+statusLabel.Text = "Status: Desativado"
+statusLabel.TextColor3 = Color3.new(1, 1, 1)
+statusLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+statusLabel.BorderSizePixel = 0
+statusLabel.Font = Enum.Font.SourceSans
+statusLabel.TextSize = 16
+statusLabel.Parent = mainFrame
+
+-- Evento de clique no botão
+autoFarmButton.MouseButton1Click:Connect(function()
+    isFarming = not isFarming
+    if isFarming then
+        statusLabel.Text = "Status: Ativado"
+        autoFarmButton.Text = "Desativar Auto-Farm"
+        spawn(autoFarm) -- Executa o farming em uma thread separada
+    else
+        statusLabel.Text = "Status: Desativado"
+        autoFarmButton.Text = "Ativar Auto-Farm"
+    end
+end)
